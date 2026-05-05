@@ -13,11 +13,9 @@ paths = ["/"]
 run = "node server.js"
 
 [services.production]
+run = "node server.js"
 
-[services.production.run]
-args = ["node", "server.js"]
-
-[services.production.run.env]
+[services.production.env]
 PORT = "8080"
 NODE_ENV = "production"
 
