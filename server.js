@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 const express = require('express');
-const path = require('path');
 const { rateLimit } = require('express-rate-limit');
 const OpenAI = require('openai');
 
@@ -21,9 +20,6 @@ const limiter = rateLimit({
   message: { error: 'Too many requests — please try again later.' },
 });
 app.use('/api/speakup', limiter);
-
-/* ── STATIC FILES ── */
-app.use(express.static(path.join(__dirname, 'public')));
 
 /* ── HEALTH CHECK ── */
 app.get('/api/healthz', (_req, res) => res.json({ status: 'ok' }));
@@ -130,12 +126,7 @@ Return a JSON object with exactly these keys:
   }
 });
 
-/* ── SPA FALLBACK ── */
-app.get('/{*path}', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
 /* ── START ── */
 app.listen(PORT, () => {
-  console.log(`SpeakUp server running on port ${PORT}`);
+  console.log(`SpeakUp API server running on port ${PORT}`);
 });
