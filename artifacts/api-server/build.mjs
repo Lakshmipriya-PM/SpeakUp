@@ -120,7 +120,20 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
   });
 }
 
-buildAll().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+async function copyPublic() {
+  const { cp } = await import("node:fs/promises");
+  const srcPublic = path.resolve(artifactDir, "public");
+  const distPublic = path.resolve(artifactDir, "dist", "public");
+  try {
+    await cp(srcPublic, distPublic, { recursive: true });
+  } catch (err) {
+    if (err.code !== "ENOENT") throw err;
+  }
+}
+
+buildAll()
+  .then(() => copyPublic())
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
