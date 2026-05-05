@@ -10,12 +10,12 @@ name = "API Server"
 paths = ["/"]
 
 [services.development]
-run = "pnpm --filter @workspace/api-server run dev"
+run = "node server.js"
 
 [services.production]
 
 [services.production.run]
-args = ["node", "artifacts/api-server/server.js"]
+args = ["node", "server.js"]
 
 [services.production.run.env]
 PORT = "8080"
