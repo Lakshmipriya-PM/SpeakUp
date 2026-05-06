@@ -455,47 +455,60 @@
     .fb-head h2 { font-size: 1.65rem; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.5px; }
     .fb-head p { color: var(--muted); font-size: 0.88rem; }
 
-    .fb-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      width: 100%;
+    /* Stats bar — clarity + pace */
+    .fb-stats-bar {
+      display: flex; align-items: stretch; width: 100%;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
     }
-    .fb-grid .fb-card:nth-child(5),
-    .fb-grid .fb-card:nth-child(6) { grid-column: 1 / -1; }
+    .stat-item { flex: 1; padding: 18px 22px; display: flex; flex-direction: column; gap: 6px; }
+    .stat-item + .stat-item { border-left: 1px solid var(--border); }
+    .stat-label {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 2.5px;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .stat-sub { font-size: 0.82rem; color: var(--muted); line-height: 1.35; }
+
+    /* Side-by-side row (pills cards) */
+    .fb-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
 
     .fb-card {
       background: var(--bg2); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 20px 22px;
     }
     .fb-lbl {
-      font-size: 0.68rem; font-weight: 700; letter-spacing: 2.5px;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 2.5px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
     }
-    .fb-val { font-size: 0.93rem; line-height: 1.65; }
+    .fb-val { font-size: 0.92rem; line-height: 1.6; }
 
-    .score-row { display: flex; align-items: baseline; gap: 5px; margin-bottom: 6px; }
+    .score-row { display: flex; align-items: baseline; gap: 5px; margin-bottom: 4px; }
     .score-n { font-size: 3rem; font-weight: 900; color: var(--accent2); line-height: 1; }
     .score-d { color: var(--muted); font-size: 1rem; }
 
     .pace-badge {
       display: inline-block; padding: 5px 15px; border-radius: 100px;
-      font-size: 0.85rem; font-weight: 700; margin-bottom: 6px;
+      font-size: 0.85rem; font-weight: 700;
     }
     .p-good { background: rgba(74,222,128,0.1); color: var(--success); border: 1px solid rgba(74,222,128,0.28); }
     .p-fast { background: rgba(250,204,21,0.1); color: var(--warning); border: 1px solid rgba(250,204,21,0.28); }
     .p-slow { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.28); }
 
-    .filler-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 6px; }
+    /* Pill chips */
+    .chip-list { display: flex; flex-wrap: wrap; gap: 7px; }
     .filler-chip {
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: 8px; padding: 4px 11px; font-size: 0.82rem;
+      border-radius: 100px; padding: 4px 12px; font-size: 0.8rem; font-weight: 500;
+      background: rgba(250,204,21,0.08); border: 1px solid rgba(250,204,21,0.3); color: var(--warning);
     }
-    .filler-chip strong { color: var(--accent2); }
+    .filler-chip strong { font-weight: 700; }
+    .redundant-chip {
+      border-radius: 100px; padding: 4px 12px; font-size: 0.8rem; font-weight: 500;
+      background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); color: #a78bfa;
+    }
 
     .fb-card.tip { background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(108,99,255,0.02)); border-color: rgba(108,99,255,0.3); }
     .fb-card.enc { background: linear-gradient(135deg, rgba(74,222,128,0.08), rgba(74,222,128,0.01)); border-color: rgba(74,222,128,0.22); }
-    .fb-card.enc .fb-val { font-size: 1.02rem; font-style: italic; }
+    .fb-card.enc .fb-val { font-size: 1rem; font-style: italic; }
 
     /* ─────────────────────────────────────
        RESPONSIVE
@@ -522,9 +535,9 @@
       .circle-timer { width: 160px; height: 160px; }
       .circle-num { font-size: 2.8rem; }
 
-      .fb-grid { grid-template-columns: 1fr; }
-      .fb-grid .fb-card:nth-child(5),
-      .fb-grid .fb-card:nth-child(6) { grid-column: auto; }
+      .fb-row { grid-template-columns: 1fr; }
+      .fb-stats-bar { flex-direction: column; }
+      .stat-item + .stat-item { border-left: none; border-top: 1px solid var(--border); }
 
       .mic-btn { width: 84px; height: 84px; font-size: 2rem; }
     }
@@ -1004,14 +1017,20 @@
     const fillers = f.fillers || {};
     const fkeys = Object.keys(fillers);
     const fillersHTML = fkeys.length === 0
-      ? `<span style="color:var(--success)">No filler words detected! 🎉</span>`
-      : `<div class="filler-list">${fkeys.map(w =>
-          `<span class="filler-chip">"${esc(w)}" <strong>×${fillers[w]}</strong></span>`
+      ? `<span style="color:var(--success);font-size:0.85rem">None detected 🎉</span>`
+      : `<div class="chip-list">${fkeys.map(w =>
+          `<span class="filler-chip">${esc(w)} <strong>×${fillers[w]}</strong></span>`
+        ).join('')}</div>`;
+
+    const unnecessary = Array.isArray(f.unnecessaryWords) ? f.unnecessaryWords : [];
+    const unnecessaryHTML = unnecessary.length === 0
+      ? `<span style="color:var(--success);font-size:0.85rem">None detected 🎉</span>`
+      : `<div class="chip-list">${unnecessary.map(w =>
+          `<span class="redundant-chip">${esc(w)}</span>`
         ).join('')}</div>`;
 
     const clarity = f.clarity || {};
     const score = clarity.score ?? '—';
-
     const paceRaw = (f.pace || '').toLowerCase();
     const paceClass = paceRaw.includes('fast') ? 'p-fast' : paceRaw.includes('slow') ? 'p-slow' : 'p-good';
 
@@ -1021,44 +1040,47 @@
         <p>${esc(s.topic)} &middot; ${s.duration}s</p>
       </div>
 
-      <div class="fb-grid">
-        <div class="fb-card">
-          <div class="fb-lbl">🗣️ Filler Words</div>
-          <div class="fb-val">${fillersHTML}</div>
-        </div>
-
-        <div class="fb-card">
-          <div class="fb-lbl">💡 Clarity</div>
-          <div class="fb-val">
-            <div class="score-row">
-              <span class="score-n">${esc(String(score))}</span>
-              <span class="score-d">/ 10</span>
-            </div>
-            <div>${esc(clarity.reason || '')}</div>
+      <div class="fb-stats-bar">
+        <div class="stat-item">
+          <span class="stat-label">💡 Clarity</span>
+          <div class="score-row">
+            <span class="score-n">${esc(String(score))}</span>
+            <span class="score-d">/ 10</span>
           </div>
+          <span class="stat-sub">${esc(clarity.reason || '')}</span>
         </div>
-
-        <div class="fb-card">
-          <div class="fb-lbl">⚡ Pace</div>
-          <div class="fb-val">
+        <div class="stat-item">
+          <span class="stat-label">⚡ Pace</span>
+          <div style="margin-top:4px">
             <span class="pace-badge ${paceClass}">${esc(f.pace || 'Good')}</span>
           </div>
         </div>
+      </div>
 
+      <div class="fb-row">
         <div class="fb-card">
-          <div class="fb-lbl">🏗️ Structure</div>
-          <div class="fb-val">${esc(f.structure || '')}</div>
+          <div class="fb-lbl">🗣️ Filler Words</div>
+          ${fillersHTML}
         </div>
+        <div class="fb-card">
+          <div class="fb-lbl">🔁 Unnecessary Words</div>
+          ${unnecessaryHTML}
+        </div>
+      </div>
 
-        <div class="fb-card tip">
-          <div class="fb-lbl">🎯 Tip to Improve</div>
-          <div class="fb-val">${esc(f.tip || '')}</div>
-        </div>
+      <div class="fb-card">
+        <div class="fb-lbl">🏗️ Structure</div>
+        <div class="fb-val">${esc(f.structure || '')}</div>
+      </div>
 
-        <div class="fb-card enc">
-          <div class="fb-lbl">🌟 Encouragement</div>
-          <div class="fb-val">"${esc(f.encouragement || '')}"</div>
-        </div>
+      <div class="fb-card tip">
+        <div class="fb-lbl">🎯 Tip to Improve</div>
+        <div class="fb-val">${esc(f.tip || '')}</div>
+      </div>
+
+      <div class="fb-card enc">
+        <div class="fb-lbl">🌟</div>
+        <div class="fb-val">"${esc(f.encouragement || '')}"</div>
       </div>
 
       <div class="btn-row">

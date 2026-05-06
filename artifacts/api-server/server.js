@@ -102,25 +102,23 @@ app.post('/api/speakup/feedback', async (req, res) => {
   try {
     const result = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `You are a friendly communication coach. The user was given this topic: "${topic}" from category: "${category}". They spoke for ${duration} seconds. Here is their transcript: "${transcript}".
+      contents: `You are a friendly communication coach.
 
-Give feedback on:
-1) Filler words used (list them with count)
-2) Clarity (score out of 10 with one line reason)
-3) Pace (too fast / good / too slow)
-4) Structure (did they open, elaborate, and close properly?)
-5) One specific actionable tip to improve
-6) One encouraging closing line
+IMPORTANT: The transcript may contain speech recognition (STT) errors — misheard words, wrong spellings, or garbled phrases. Judge the speaker's intent and meaning, not the exact wording. If something looks like an error, assume they said something sensible.
 
-Keep tone friendly and constructive.
+Topic: "${topic}" | Category: "${category}" | Duration: ${duration} seconds
+Transcript: "${transcript}"
+
+Give SHORT, punchy feedback. Keep every text field to 1-2 sentences max, plain everyday words.
 
 Return a JSON object with exactly these keys:
-- fillers: object mapping each filler word string to its integer count
-- clarity: object with "score" (number 1-10) and "reason" (string)
-- pace: string, one of "too fast", "good", or "too slow"
-- structure: string describing their structure
-- tip: string with one actionable improvement tip
-- encouragement: string with an encouraging closing line
+- fillers: object mapping each filler word/phrase to its integer count, e.g. {"um": 3, "like": 2} — empty object if none
+- unnecessaryWords: array of repeated or redundant words/phrases the speaker used, e.g. ["basically", "and so and so"] — max 5 items, empty array if none
+- clarity: object with "score" (integer 1-10) and "reason" (one sentence, max 12 words)
+- pace: string, exactly one of "too fast", "good", or "too slow"
+- structure: one sentence on how they opened, built up, and closed
+- tip: one specific, actionable tip in plain English (max 15 words)
+- encouragement: one warm closing sentence (max 15 words)
 
 Return ONLY the JSON object, no markdown, no code fences.`,
       config: {
