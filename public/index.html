@@ -1084,14 +1084,21 @@
       </div>
 
       <div class="btn-row">
-        <button class="btn-primary" onclick="tryAgain()">Try Again →</button>
-        <button class="btn-secondary" onclick="go('s-home')">Pick New Category</button>
+        <button class="btn-primary" onclick="newQuestion()">New Question →</button>
+        <button class="btn-secondary" onclick="go('s-home')">New Category</button>
       </div>`;
   }
 
   function tryAgain() {
     s.finalTranscript = ''; s.duration = 0;
     startPrep();
+  }
+
+  function newQuestion() {
+    s.topic = ''; s.finalTranscript = ''; s.duration = 0;
+    document.getElementById('topic-cat-pill').textContent = s.category;
+    go('s-topic');
+    fetchTopic();
   }
 
   /* ════════════════════════════════════════
