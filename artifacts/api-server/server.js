@@ -61,7 +61,20 @@ app.post('/api/speakup/topic', async (req, res) => {
   try {
     const result = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Give me one random, surprising, thought-provoking speaking topic from the category: ${category}. Return only the topic as a single sentence. No explanation, no numbering, no quotes.`,
+      contents: `Generate one speaking topic from the category: ${category}.
+
+Rules:
+- Write it like a question a friend would ask you over coffee
+- Use short, simple, everyday words — no academic or formal language
+- Avoid words like: abolished, concept, implications, fundamental, discourse, paradigm, societal, worldwide
+- Keep it under 20 words
+- Make it thought-provoking but easy to understand for a college student or young professional
+- Return only the topic as a single sentence, no quotes, no numbering
+
+Examples of the right tone:
+- "Do you think social media is making us lonelier, or more connected?"
+- "Would you take a job you hate if it paid really well?"
+- "Is it okay to lie to protect someone's feelings?"`,
     });
     const topic = result.text.trim();
     res.json({ topic });
