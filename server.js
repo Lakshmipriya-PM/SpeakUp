@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const { rateLimit } = require('express-rate-limit');
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,11 +24,12 @@ app.use('/api/speakup', limiter);
 /* ── HEALTH CHECK ── */
 app.get('/api/healthz', (_req, res) => res.json({ status: 'ok' }));
 
-/* ── HELPER: get OpenAI client ── */
-function getOpenAI() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OPENAI_API_KEY environment variable is not set.');
-  return new OpenAI({ apiKey });
+/* ── HELPER: get Gemini model ── */
+function getModel() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY environment variable is not set.');
+  const genAI = new GoogleGenerativeAI(apiKey);
+  return genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 }
 
 /* ── POST /api/speakup/topic ── */
@@ -39,29 +40,21 @@ app.post('/api/speakup/topic', async (req, res) => {
     return res.status(400).json({ error: 'category is required' });
   }
 
-  let openai;
+  let model;
   try {
-    openai = getOpenAI();
+    model = getModel();
   } catch {
-    return res.status(500).json({ error: 'OpenAI API key is not configured on the server.' });
+    return res.status(500).json({ error: 'Gemini API key is not configured on the server.' });
   }
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'user',
-          content: `Give me one random, surprising, thought-provoking speaking topic from the category: ${category}. Return only the topic as a single sentence. No explanation, no numbering, no quotes.`,
-        },
-      ],
-      max_tokens: 100,
-    });
-
-    const topic = completion.choices[0]?.message?.content?.trim() ?? '';
+    const result = await model.generateContent(
+      `Give me one random, surprising, thought-provoking speaking topic from the category: ${category}. Return only the topic as a single sentence. No explanation, no numbering, no quotes.`
+    );
+    const topic = result.response.text().trim();
     res.json({ topic });
   } catch (err) {
-    console.error('OpenAI topic error:', err.message);
+    console.error('Gemini topic error:', err.message);
     res.status(500).json({ error: 'Failed to generate topic. Please try again.' });
   }
 });
@@ -74,21 +67,19 @@ app.post('/api/speakup/feedback', async (req, res) => {
     return res.status(400).json({ error: 'topic, category, transcript, and duration are all required.' });
   }
 
-  let openai;
+  let model;
   try {
-    openai = getOpenAI();
+    model = getModel();
   } catch {
-    return res.status(500).json({ error: 'OpenAI API key is not configured on the server.' });
+    return res.status(500).json({ error: 'Gemini API key is not configured on the server.' });
   }
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      response_format: { type: 'json_object' },
-      messages: [
-        {
-          role: 'user',
-          content: `You are a friendly communication coach. The user was given this topic: "${topic}" from category: "${category}". They spoke for ${duration} seconds. Here is their transcript: "${transcript}".
+    const result = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [{
+          text: `You are a friendly communication coach. The user was given this topic: "${topic}" from category: "${category}". They spoke for ${duration} seconds. Here is their transcript: "${transcript}".
 
 Give feedback on:
 1) Filler words used (list them with count)
@@ -106,13 +97,17 @@ Return a JSON object with exactly these keys:
 - pace: string, one of "too fast", "good", or "too slow"
 - structure: string describing their structure
 - tip: string with one actionable improvement tip
-- encouragement: string with an encouraging closing line`,
-        },
-      ],
-      max_tokens: 700,
+- encouragement: string with an encouraging closing line
+
+Return ONLY the JSON object, no markdown, no code fences.`
+        }]
+      }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+      },
     });
 
-    const raw = completion.choices[0]?.message?.content ?? '{}';
+    const raw = result.response.text();
     let feedback;
     try {
       feedback = JSON.parse(raw);
@@ -121,7 +116,7 @@ Return a JSON object with exactly these keys:
     }
     res.json(feedback);
   } catch (err) {
-    console.error('OpenAI feedback error:', err.message);
+    console.error('Gemini feedback error:', err.message);
     res.status(500).json({ error: 'Failed to generate feedback. Please try again.' });
   }
 });

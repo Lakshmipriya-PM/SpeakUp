@@ -7,10 +7,10 @@
     "dev": "node server.js"
   },
   "dependencies": {
-    "cors": "^2",
+    "@google/genai": "^1.52.0",
+    "@google/generative-ai": "^0.24.1",
     "dotenv": "^17.4.2",
     "express": "^5",
-    "express-rate-limit": "^8.4.1",
-    "openai": "^6.35.0"
+    "express-rate-limit": "^8.4.1"
   }
 }
