@@ -1,8 +1,8 @@
-require('dotenv').config();
+require("dotenv").config();
 
-const express = require('express');
-const { rateLimit } = require('express-rate-limit');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const express = require("express");
+const { rateLimit } = require("express-rate-limit");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,69 +17,102 @@ const limiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests — please try again later.' },
+  message: { error: "Too many requests — please try again later." },
 });
-app.use('/api/speakup', limiter);
+app.use("/api/speakup", limiter);
 
 /* ── HEALTH CHECK ── */
-app.get('/api/healthz', (_req, res) => res.json({ status: 'ok' }));
+app.get("/api/healthz", (_req, res) => res.json({ status: "ok" }));
 
 /* ── HELPER: get Gemini model ── */
 function getModel() {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY environment variable is not set.');
+  if (!apiKey)
+    throw new Error("GEMINI_API_KEY environment variable is not set.");
   const genAI = new GoogleGenerativeAI(apiKey);
-  return genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  return genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 }
 
 /* ── POST /api/speakup/topic ── */
-app.post('/api/speakup/topic', async (req, res) => {
+app.post("/api/speakup/topic", async (req, res) => {
   const { category } = req.body;
 
-  if (!category || typeof category !== 'string') {
-    return res.status(400).json({ error: 'category is required' });
+  if (!category || typeof category !== "string") {
+    return res.status(400).json({ error: "category is required" });
   }
 
   let model;
   try {
     model = getModel();
   } catch {
-    return res.status(500).json({ error: 'Gemini API key is not configured on the server.' });
+    return res
+      .status(500)
+      .json({ error: "Gemini API key is not configured on the server." });
   }
 
   try {
+    const genAI = new GoogleGenerativeAI(
+      process.env.GEMINI_API_KEY
+    );
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+    });
+
+    console.log("KEY:", process.env.GEMINI_API_KEY);
+    console.log("MODEL:", model);
+
     const result = await model.generateContent(
       `Give me one random, surprising, thought-provoking speaking topic from the category: ${category}. Return only the topic as a single sentence. No explanation, no numbering, no quotes.`
     );
+
     const topic = result.response.text().trim();
+
     res.json({ topic });
+
   } catch (err) {
-    console.error('Gemini topic error:', err.message);
-    res.status(500).json({ error: 'Failed to generate topic. Please try again.' });
+    console.error("Gemini topic error:", err.message);
+
+    res.status(500).json({
+      error: "Failed to generate topic. Please try again."
+    });
+  }
+    console.error("Gemini topic error:", err.message);
+    res
+      .status(500)
+      .json({ error: "Failed to generate topic. Please try again." });
   }
 });
 
 /* ── POST /api/speakup/feedback ── */
-app.post('/api/speakup/feedback', async (req, res) => {
+app.post("/api/speakup/feedback", async (req, res) => {
   const { topic, category, transcript, duration } = req.body;
 
   if (!topic || !category || !transcript || duration === undefined) {
-    return res.status(400).json({ error: 'topic, category, transcript, and duration are all required.' });
+    return res
+      .status(400)
+      .json({
+        error: "topic, category, transcript, and duration are all required.",
+      });
   }
 
   let model;
   try {
     model = getModel();
   } catch {
-    return res.status(500).json({ error: 'Gemini API key is not configured on the server.' });
+    return res
+      .status(500)
+      .json({ error: "Gemini API key is not configured on the server." });
   }
 
   try {
     const result = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [{
-          text: `You are a friendly communication coach. The user was given this topic: "${topic}" from category: "${category}". They spoke for ${duration} seconds. Here is their transcript: "${transcript}".
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `You are a friendly communication coach. The user was given this topic: "${topic}" from category: "${category}". They spoke for ${duration} seconds. Here is their transcript: "${transcript}".
 
 Give feedback on:
 1) Filler words used (list them with count)
@@ -99,11 +132,13 @@ Return a JSON object with exactly these keys:
 - tip: string with one actionable improvement tip
 - encouragement: string with an encouraging closing line
 
-Return ONLY the JSON object, no markdown, no code fences.`
-        }]
-      }],
+Return ONLY the JSON object, no markdown, no code fences.`,
+            },
+          ],
+        },
+      ],
       generationConfig: {
-        responseMimeType: 'application/json',
+        responseMimeType: "application/json",
       },
     });
 
@@ -116,12 +151,16 @@ Return ONLY the JSON object, no markdown, no code fences.`
     }
     res.json(feedback);
   } catch (err) {
-    console.error('Gemini feedback error:', err.message);
-    res.status(500).json({ error: 'Failed to generate feedback. Please try again.' });
+    console.error("Gemini feedback error:", err.message);
+    res
+      .status(500)
+      .json({ error: "Failed to generate feedback. Please try again." });
   }
 });
 
 /* ── START ── */
+console.log("GEMINI:", process.env.GEMINI_API_KEY);
+
 app.listen(PORT, () => {
   console.log(`SpeakUp API server running on port ${PORT}`);
 });

@@ -1,14 +1,14 @@
-require('dotenv').config();
+require("dotenv").config();
 
-const express = require('express');
-const { rateLimit } = require('express-rate-limit');
-const { GoogleGenAI } = require('@google/genai');
+const express = require("express");
+const { rateLimit } = require("express-rate-limit");
+const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 /* ── TRUST PROXY (needed behind Replit's reverse proxy) ── */
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 /* ── MIDDLEWARE ── */
 app.use(express.json());
@@ -20,47 +20,49 @@ const limiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests — please try again later.' },
+  message: { error: "Too many requests — please try again later." },
 });
-app.use('/api/speakup', limiter);
+app.use("/api/speakup", limiter);
 
 /* ── HEALTH CHECK ── */
-app.get('/api/healthz', (_req, res) => res.json({ status: 'ok' }));
+app.get("/api/healthz", (_req, res) => res.json({ status: "ok" }));
 
 /* ── HELPER: get Gemini AI client ── */
 function getAI() {
   const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
   const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
   if (!baseUrl || !apiKey) {
-    throw new Error('Gemini AI integration env vars are not configured.');
+    throw new Error("Gemini AI integration env vars are not configured.");
   }
   return new GoogleGenAI({
     apiKey,
     httpOptions: {
-      apiVersion: '',
+      apiVersion: "",
       baseUrl,
     },
   });
 }
 
 /* ── POST /api/speakup/topic ── */
-app.post('/api/speakup/topic', async (req, res) => {
+app.post("/api/speakup/topic", async (req, res) => {
   const { category } = req.body;
 
-  if (!category || typeof category !== 'string') {
-    return res.status(400).json({ error: 'category is required' });
+  if (!category || typeof category !== "string") {
+    return res.status(400).json({ error: "category is required" });
   }
 
   let ai;
   try {
     ai = getAI();
   } catch {
-    return res.status(500).json({ error: 'AI service is not configured on the server.' });
+    return res
+      .status(500)
+      .json({ error: "AI service is not configured on the server." });
   }
 
   try {
     const result = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: "gemini-1.5-flash",
       contents: `Generate one speaking topic from the category: ${category}.
 
 Rules:
@@ -79,29 +81,35 @@ Examples of the right tone:
     const topic = result.text.trim();
     res.json({ topic });
   } catch (err) {
-    console.error('Gemini topic error:', err.message);
-    res.status(500).json({ error: 'Failed to generate topic. Please try again.' });
+    console.error("FULL GEMINI ERROR:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to generate topic. Please try again." });
   }
 });
 
 /* ── POST /api/speakup/feedback ── */
-app.post('/api/speakup/feedback', async (req, res) => {
+app.post("/api/speakup/feedback", async (req, res) => {
   const { topic, category, transcript, duration } = req.body;
 
   if (!topic || !category || !transcript || duration === undefined) {
-    return res.status(400).json({ error: 'topic, category, transcript, and duration are all required.' });
+    return res.status(400).json({
+      error: "topic, category, transcript, and duration are all required.",
+    });
   }
 
   let ai;
   try {
     ai = getAI();
   } catch {
-    return res.status(500).json({ error: 'AI service is not configured on the server.' });
+    return res
+      .status(500)
+      .json({ error: "AI service is not configured on the server." });
   }
 
   try {
     const result = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: "gemini-1.5-flash",
       contents: `You are a friendly communication coach.
 
 IMPORTANT: The transcript may contain speech recognition (STT) errors — misheard words, wrong spellings, or garbled phrases. Judge the speaker's intent and meaning, not the exact wording. If something looks like an error, assume they said something sensible.
@@ -122,7 +130,7 @@ Return a JSON object with exactly these keys:
 
 Return ONLY the JSON object, no markdown, no code fences.`,
       config: {
-        responseMimeType: 'application/json',
+        responseMimeType: "application/json",
         maxOutputTokens: 8192,
       },
     });
@@ -135,12 +143,13 @@ Return ONLY the JSON object, no markdown, no code fences.`,
     }
     res.json(feedback);
   } catch (err) {
-    console.error('Gemini feedback error:', err.message);
-    res.status(500).json({ error: 'Failed to generate feedback. Please try again.' });
+    console.error("Gemini feedback error:", err.message);
+    res
+      .status(500)
+      .json({ error: "Failed to generate feedback. Please try again." });
   }
 });
 
 /* ── START ── */
 app.listen(PORT, () => {
-  console.log(`SpeakUp API server running on port ${PORT}`);
-});
+  console.log("NEW SERVER VERSION RUNNING");

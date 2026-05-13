@@ -17,15 +17,15 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
-  server: {
-    port,
-    strictPort: true,
-    host: "0.0.0.0",
-    allowedHosts: true,
-  },
-  preview: {
-    port,
-    host: "0.0.0.0",
-    allowedHosts: true,
-  },
-});
+server: {
+  port: 3000,
+  strictPort: true,
+  host: "0.0.0.0",
+  allowedHosts: true,
+},
+
+preview: {
+  port: 3000,
+  host: "0.0.0.0",
+  allowedHosts: true,
+},
