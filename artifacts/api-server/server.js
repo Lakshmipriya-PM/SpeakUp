@@ -29,18 +29,11 @@ app.get("/api/healthz", (_req, res) => res.json({ status: "ok" }));
 
 /* ── HELPER: get Gemini AI client ── */
 function getAI() {
-  const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-  const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-  if (!baseUrl || !apiKey) {
-    throw new Error("Gemini AI integration env vars are not configured.");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not configured.");
   }
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      apiVersion: "",
-      baseUrl,
-    },
-  });
+  return new GoogleGenAI({ apiKey });
 }
 
 /* ── POST /api/speakup/topic ── */
